@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Akshaya xprss mart - Your Online Grocery Store</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Use Inter font family -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f7f9;
+        }
+        /* Custom scrollbar for product list */
+        .product-list::-webkit-scrollbar {
+            width: 8px;
+        }
+        .product-list::-webkit-scrollbar-track {
+            background: #e0f2f1; /* Light cyan background */
+        }
+        .product-list::-webkit-scrollbar-thumb {
+            background-color: #0d9488; /* Teal 600 */
+            border-radius: 20px;
+            border: 2px solid #e0f2f1;
+        }
+        /* Custom styles for quantity input for better touch targets */
+        .qty-input {
+            width: 4rem;
+            text-align: center;
+            border-radius: 0.375rem;
+            border: 1px solid #d1d5db;
+        }
+        /* Style for the 'Add to Cart' button */
+        .add-to-cart-btn {
+            transition: all 0.2s;
+        }
+        .add-to-cart-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Ensure modal is always above header and all content */
+        #custom-modal {
+            z-index: 1000 !important;
+        }
+
+        /* Responsive adjustments for mobile */
+        @media (max-width: 1024px) {
+            #app {
+                flex-direction: column !important;
+            }
+            aside.lg\:w-1\/4 {
+                width: 100% !important;
+                margin-top: 2rem;
+                position: static !important;
+            }
+            main.lg\:w-3\/4 {
+                width: 100% !important;
+                padding-right: 0 !important;
+            }
+        }
+        @media (max-width: 640px) {
+            .product-list {
+                grid-template-columns: 1fr !important;
+                max-height: none !important;
+            }
+            .product-list .bg-white {
+                padding: 1rem !important;
+            }
+            header {
+                padding: 1rem !important;
+            }
+            .text-4xl {
+                font-size: 2rem !important;
+            }
+            .text-3xl {
+                font-size: 1.5rem !important;
+            }
+            .text-2xl {
+                font-size: 1.2rem !important;
+            }
+            .text-xl {
+                font-size: 1rem !important;
+            }
+            .add-to-cart-btn, .qty-input {
+                font-size: 1rem !important;
+                padding: 0.5rem 0.75rem !important;
+            }
+            .qty-input {
+                width: 3rem !important;
+            }
+            .rounded-2xl {
+                border-radius: 1rem !important;
+            }
+            .rounded-lg {
+                border-radius: 0.5rem !important;
+            }
+            .p-6, .p-5 {
+                padding: 1rem !important;
+            }
+            .mb-6 {
+                margin-bottom: 1rem !important;
+            }
+            .mb-8 {
+                margin-bottom: 1rem !important;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <!-- Main Application Container -->
+    <div id="app" class="flex flex-col lg:flex-row max-w-7xl mx-auto p-4 md:p-8">
+        <!-- Floating Cart Icon for Mobile -->
+        <button id="mobile-cart-fab" onclick="scrollToCart()" style="display:none;position:fixed;bottom:24px;right:24px;z-index:1100;background:#0d9488;color:#fff;border:none;border-radius:50%;width:56px;height:56px;box-shadow:0 4px 12px rgba(0,0,0,0.15);align-items:center;justify-content:center;flex-direction:column;gap:2px;">
+            <span style="font-size:1.7rem;line-height:1;">🛒</span>
+            <span id="mobile-cart-count" style="font-size:1rem;font-weight:bold;position:absolute;top:6px;right:10px;background:#f87171;color:#fff;border-radius:50%;padding:2px 7px;min-width:22px;text-align:center;">0</span>
+        </button>
+
+        <!-- Product List (Main Content) -->
+        <main class="lg:w-3/4 w-full lg:pr-6 mb-8 lg:mb-0">
+            <!-- Header -->
+            <header class="bg-white shadow-lg rounded-2xl p-6 mb-6 sticky top-0 z-10">
+                <h1 class="text-4xl font-extrabold text-teal-700">🛒 Akshaya xprss mart</h1>
+                <p class="text-gray-500 mt-1">Your one-stop shop for daily essentials. Products are stocked with 10 units/kg initially.</p>
+                <input type="text" id="search-input" placeholder="Search for Poha, Dal, or Soap..." class="mt-4 p-3 w-full border border-gray-300 rounded-xl focus:ring-teal-500 focus:border-teal-500 transition duration-150" oninput="renderProducts()">
+            </header>
+
+            <!-- Product Grid -->
+            <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 product-list overflow-y-auto max-h-[70vh] lg:max-h-[80vh]">
+                <!-- Products will be rendered here -->
+            </div>
+        </main>
+
+        <!-- Shopping Cart (Sidebar) -->
+        <aside class="lg:w-1/4 w-full sticky top-4">
+            <div class="bg-white shadow-xl rounded-2xl p-6">
+                <h2 class="text-2xl font-bold text-teal-700 mb-4 border-b pb-2">Shopping Cart (<span id="cart-item-count">0</span>)</h2>
+                
+                <div id="cart-items-container" class="space-y-4 max-h-72 overflow-y-auto mb-4">
+                    <!-- Cart items will be rendered here -->
+                    <p id="empty-cart-message" class="text-gray-500 italic">Your cart is empty. Add some essentials!</p>
+                </div>
+
+                <!-- Cart Summary -->
+                <div class="border-t pt-4 space-y-2">
+                    <div class="flex justify-between font-semibold text-lg text-gray-800">
+                        <span>Total Items:</span>
+                        <span id="total-items-value">0</span>
+                    </div>
+                    <div class="flex justify-between font-extrabold text-2xl text-teal-800">
+                        <span>Grand Total:</span>
+                        <span id="grand-total-value">₹0.00</span>
+                    </div>
+                </div>
+
+                <!-- Checkout Section -->
+                <button onclick="checkout()" class="w-full mt-6 bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 rounded-xl shadow-md transition duration-200 add-to-cart-btn">
+                    Proceed to Checkout
+                </button>
+
+                <!-- Payment QR Code Placeholder -->
+                <div id="qr-code-section" class="hidden mt-6 text-center border-t pt-4">
+                    <h3 class="text-xl font-semibold text-gray-700 mb-3">Scan to Pay (Sample)</h3>
+                    <img src="https://placehold.co/200x200/0d9488/ffffff?text=Sample+QR+Code" alt="Sample Payment QR Code" class="mx-auto border-4 border-teal-500 rounded-xl shadow-lg">
+                    <p class="text-sm text-gray-500 mt-2">Use any UPI app to pay the Grand Total.</p>
+                </div>
+
+                <!-- Custom Modal for Alerts/Confirmations -->
+                <div id="custom-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden" onclick="closeModal()">
+                    <div class="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full transition-all duration-300" onclick="event.stopPropagation()">
+                        <h3 id="modal-title" class="text-xl font-bold text-teal-700 mb-3"></h3>
+                        <p id="modal-message" class="text-gray-700 mb-4"></p>
+                        <button onclick="closeModal()" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 rounded-lg">
+                            OK
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // Show/hide mobile cart icon based on screen size
+        function updateMobileCartFab() {
+            const fab = document.getElementById('mobile-cart-fab');
+            if (!fab) return;
+            if (window.innerWidth <= 640) {
+                fab.style.display = 'flex';
+            } else {
+                fab.style.display = 'none';
+            }
+        }
+
+        // Scroll to cart area when mobile cart icon is clicked
+        function scrollToCart() {
+            const cartArea = document.querySelector('aside');
+            if (cartArea) {
+                cartArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+        // --- DATA SECTION ---
+
+        // Product list with English name, Telugu name, Unit Price, Unit Type, and Image URL.
+        const initialProductsData = [
+            // Dals and Flours (పప్పులు, పిండ్లు)
+            // Updated Toor Dal placeholder with a warmer, more distinct color scheme
+            { id: 1, name: "Toor Dal", telugu: "కంది పప్పు", mrpPrice: '', discount: 0, price: 120, unit: "kg", imageUrl: "./turD.png" }, 
+            { id: 2, name: "Urad Dal (Split Black Gram)", telugu: "మినప పప్పు", mrpPrice: '', discount: 0, price: 125, unit: "kg", imageUrl: "./uradD.png" },
+            { id: 3, name: "Chana Dal (Split Chickpea)", telugu: "శెనగ పప్పు", mrpPrice: '', discount: 0, price: 100, unit: "kg", imageUrl: "./chenaD.png" },
+            { id: 4, name: "Moong Dal (Split Green Gram)", telugu: "పెసర పప్పు", mrpPrice: '', discount: 0, price: 125, unit: "kg", imageUrl: "./moongD.png" },
+            { id: 5, name: "Masoor Dal (Red Lentil)", telugu: "ఎర్ర పప్పు", mrpPrice: '', discount: 0, price: 105, unit: "kg", imageUrl: "./masoorD.png" },
+            { id: 6, name: "Gram Flour (Besan)", telugu: "శెనగ పిండి", mrpPrice: '', discount: 0, price: 0, unit: "kg", imageUrl: "./besan.png" },
+            { id: 7, name: "All-Purpose Flour (Maida)", telugu: "మైదా పిండి", mrpPrice: '', discount: 0, price: 0, unit: "kg", imageUrl: "./maidaP.png" },
+            { id: 8, name: "Whole Wheat Flour (Atta)", telugu: "గోధుమ పిండి", mrpPrice: '', discount: 0, price: 0, unit: "kg", imageUrl: "./godhumaP.png" },
+
+            // Breakfast Items (ఉపహార వస్తువులు)
+            { id: 9, name: "Upma Rava (Semolina)", telugu: "ఉప్మా రవ్వ (సన్న)", mrpPrice: '', discount: 0, price: 60, unit: "kg", imageUrl: "./suji.png" },
+            // { id: 10, name: "Coarse Rava (Semolina)", telugu: "ఉప్మా రవ్వ (దొడ్డు)", mrpPrice: '', discount: 0, price: 70, unit: "kg", imageUrl: "./coarseRava.png" },
+            { id: 11, name: "Idli Rava", telugu: "ఇడ్లీ రవ్వ", mrpPrice: '', discount: 0, price: 60, unit: "kg", imageUrl: "./idliRava.png" },
+            { id: 12, name: "Vermicelli (Bambino)", telugu: "బంబినో ప్యాకెట్స్", mrpPrice: 41, discount: 1, price: 40, unit: "packet", imageUrl: "./bambino.png" },
+            { id: 13, name: "Instant Noodles (Maggi)", telugu: "మ్యాగీ", mrpPrice: 151, discount: 1, price: 150, unit: "packet", imageUrl: "./maggi.png" },
+            { id: 14, name: "Flattened Rice (Poha)", telugu: "అటుకులు", mrpPrice: '', discount: 0, price: 70, unit: "kg", imageUrl: "./poha.png" },
+            
+            // Staple Foods & Dairy (ముఖ్యమైన ఆహారాలు)
+            { id: 15, name: "Raw Rice (Sona Masuri)", telugu: "బియ్యం", mrpPrice: 61, discount: 1, price: 60, unit: "kg", imageUrl: "./sonaMasoori.png" },
+            // { id: 16, name: "Milk (Long-life Carton)", telugu: "పాలు", mrpPrice: 71, discount: 1, price: 70, unit: "liter", imageUrl: "./milk.png" },
+            { id: 17, name: "Sugar (Granulated)", telugu: "చక్కెర", mrpPrice: 0, discount: 0, price: 120, unit: "kg", imageUrl: "./sugar.png" },
+            { id: 18, name: "Jaggery (Bellam)", telugu: "బెల్లం", mrpPrice: 0, discount: 0, price: 0, unit: "kg", imageUrl: "./jaggery.png" },
+
+            // Spices & Seasonings (మసాలాలు)
+            { id: 19, name: "Cumin Seeds (Jeera)", telugu: "జీలకర్ర", mrpPrice: 60, discount: 10, price: 50, unit: "100 gms", quantity: 1, imageUrl: "./jeelakarra.png" },
+            { id: 20, name: "Surya Mustard Seeds(Aavalu)", telugu: "ఆవాలు", mrpPrice: 90, discount: 5, price: 85, unit: "500gms", quantity: 1, imageUrl: "./avalu.png" },
+            { id: 21, name: "Ashirvad Turmeric Powder (Pasupu)", mrpPrice: 40, discount: 5, quantity: 1, price: 35, unit: "100gms", imageUrl: "./pasupu.png" },
+            { id: 22, name: "Tata Refined Iodized Salt white (Uppu)", telugu: "ఉప్పు", mrpPrice: 30, discount: 1, price: 30, unit: "1kg", quantity: 1, imageUrl: "./tataSalt.jpg" },
+            { id: 23, name: "Red Chili Powder (Kaaram)", telugu: "కారం", mrpPrice: 88, discount: 33, price: 55, unit: "200gms", quantity: 1, imageUrl: "./chilliPowder.png" },
+            { id: 24, name: "Coriander Seeds (Dhaniyalu)", telugu: "ధనియాలు", mrpPrice: 0, discount: 1, price: 0, unit: "kg", quantity: 1, imageUrl: "./daniyalu.png" },
+            { id: 25, name: "Fenugreek Seeds (Mentulu)", telugu: "మెంతులు", mrpPrice: 50, discount: 10, price: 40, unit: "", quantity: 1, imageUrl: "./menthulu.png" },
+          //  { id: 26, name: "Dried Red Chilies", telugu: "ఎండు మిర్చి", mrpPrice: 251, discount: 1, price: 250, unit: "kg", quantity: 1, imageUrl: "./driedRedChillies.png" },
+            { id: 27, name: "Hello life(Refined Sunflower)- Freedom subsidiary", telugu: "నూనె", mrpPrice: 180, discount: 30, price: 150, unit: "liter", quantity: 1, imageUrl: "./helloLife.jpg" },
+            { id: 28, name: "Surya-Garam Masala Mix", telugu: "మసాలా సామానులు", mrpPrice: 5, discount: 0, price: 5, unit: "8gms", quantity: 1, imageUrl: "./garam masala surya.jpg" },
+            // { id: 29, name: "Mixed Masala Powders", telugu: "మసాలా పొడులు", mrpPrice: 301, discount: 1, price: 300, unit: "packet", quantity: 1, imageUrl: "./mixedMasalaPowders.png" },
+            { id: 30, name: "Tamarind (Chintha Pandu)", telugu: "చింతపండు", mrpPrice: 181, discount: 1, price: 180, unit: "kg", quantity: 1, imageUrl: "./chintapandu.png" },
+
+            // Snacks & Beverages (స్నాక్స్, పానీయాలు)
+            { id: 31, name: "Red Label Tea Powder", telugu: "టీ పౌడర్", mrpPrice: 160, discount: 5, price: 155, unit: "packet", quantity: 1, imageUrl: "./redLabel.jpg" },
+            { id: 32, name: "Instant Coffee Mix Packets", telugu: "కాఫీ ప్యాకెట్స్", mrpPrice: 251, discount: 1, price: 250, unit: "packet", quantity: 1, imageUrl: "./coffeeP.png" },
+            { id: 33, name: "Groundnuts", telugu: "పల్లీలు", mrpPrice: '150', discount: 20, price: 130, unit: "kg", quantity: 1, imageUrl: "./peanuts.png" },
+            { id: 34, name: "Roasted Gram (Putnalu)", telugu: "పుట్నాలు", mrpPrice: 111, discount: 1, price: 110, unit: "kg", quantity: 1, imageUrl: "./putnalu.png" },
+            // { id: 35, name: "Assorted Biscuit Packets", telugu: "బిస్కెట్ ప్యాకెట్స్", mrpPrice: 51, discount: 1, price: 50, unit: "packet", quantity: 1, imageUrl: "./biscuitPackets.png" },
+            // { id: 36, name: "Dry Fruits Mix (Badam, Kaju, Kismis)", telugu: "బాదం, కాజు, కిస్మిస్", mrpPrice: 801, discount: 1, price: 800, unit: "kg", quantity: 1, imageUrl: "./dryFruitsMix.png" },
+
+            // Pooja Items (పూజ సామానులు)
+            { id: 37, name: "Incense Sticks (Agarbathulu)", telugu: "అగరుబత్తీలు", mrpPrice: 51, discount: 1, price: 50, unit: "packet", quantity: 1, imageUrl: "./inc.png" },
+            { id: 38, name: "Cotton Wicks (Othulu)", telugu: "వత్తులు", mrpPrice: 31, discount: 1, price: 30, unit: "packet", quantity: 1, imageUrl: "./wicks.png" },
+            { id: 39, name: "Camphor Tablets (Karpuram)", telugu: "కర్పూరం ప్యాకెట్స్", mrpPrice: 71, discount: 1, price: 70, unit: "packet", quantity: 1, imageUrl: "./karpuram.png" },
+
+            // Cleaning & Home Essentials (శుభ్రత, గృహోపకరణాలు)
+            // { id: 40, name: "Detergent Powder (Surf/Tide)", telugu: "సర్ఫ్", mrpPrice: 181, discount: 1, price: 180, unit: "kg", quantity: 1, imageUrl: "./detergentPowder.png" },
+            { id: 41, name: "Shampoo (Large Bottle)", telugu: "షాంపూ", mrpPrice: 351, discount: 1, price: 350, unit: "bottle", quantity: 1, imageUrl: "./shampoo.png" },
+            { id: 42, name: "Life Buoy Soap", telugu: "సబ్బు", mrpPrice: 5, discount: 0, price: 5, unit: "pack", quantity: 1, imageUrl: "./lifebuoy5.jpg" },
+            { id: 43, name: "Vim Dishwashing Bar", telugu: "విమ్ బార్స్", mrpPrice: 86, discount: 1, price: 85, unit: "4*200gms", quantity: 1, imageUrl: "./vim.png" },
+            // { id: 44, name: "Washing Soap Bar (Rin)", telugu: "రిన్ బార్స్", mrpPrice: 41, discount: 1, price: 40, unit: "bar", quantity: 1, imageUrl: "https://placehold.co/150x150/d1fae5/065f46?text=Washing+Bar" },
+            // { id: 45, name: "Kitchen Scrub Pads (Pack of 3)", telugu: "స్క్రబ్బర్లు", mrpPrice: 61, discount: 1, price: 60, unit: "pack", quantity: 1, imageUrl: "https://placehold.co/150x150/d1fae5/065f46?text=Scrub+Pads" },
+            // { id: 46, name: "Floor Cleaner Liquid", telugu: "ఫ్లోర్ క్లీనర్", mrpPrice: 151, discount: 1, price: 150, unit: "bottle", quantity: 1, imageUrl: "https://placehold.co/150x150/d1fae5/065f46?text=Floor+Cleaner" },
+            { id: 47, name: "Domex-Toilet Cleaner Liquid", telugu: "వాష్ రూమ్ క్లీనర్", mrpPrice: 245, discount: 25, price: 220, unit: "bottle", quantity: 1, imageUrl: "./domex.jpg" },
+            // { id: 48, name: "Liquid Handwash Refill", telugu: "హ్యాండ్‌వాష్", mrpPrice: 91, discount: 1, price: 90, unit: "pouch", quantity: 1, imageUrl: "https://placehold.co/150x150/d1fae5/065f46?text=Handwash+Refill" },
+            { id: 49, name: "Garbage Bags (Dustbin Covers)", telugu: "డస్ట్ బిన్ కవర్స్", mrpPrice: 71, discount: 1, price: 70, unit: "roll", quantity: 1, imageUrl: "./dustBinCovers.png" },
+            // { id: 50, name: "Safety Matchboxes (Pack)", telugu: "మ్యాచ్ బాక్సులు", mrpPrice: 11, discount: 1, price: 10, unit: "pack", quantity: 1, imageUrl: "https://placehold.co/150x150/d1fae5/065f46?text=Matchboxes" },
+
+            // Personal Care & Misc (వ్యక్తిగత సంరక్షణ)
+            { id: 51, name: "Sanitary Napkins (Whisper)- green", telugu: "విష్పర్స్", mrpPrice: 399, discount: 1, price: 399, unit: "pack", quantity: 1, imageUrl: "./whisper.jpg" },
+            { id: 52, name: "Colgate Xtraa Toothbrush", telugu: "టూత్‌బ్రష్", mrpPrice: 18, discount: 0, price: 18, unit: "1 piece", quantity: 1, imageUrl: "colgateBrush.jpg" },
+            { id: 53, name: "Patanjali paste", telugu: "పేస్ట్", mrpPrice: 120, discount: 5, price: 115, unit: "200gms", quantity: 1, imageUrl: "./patanjaliPaste.jpg" },
+            // { id: 54, name: "Tongue Cleaner (Pack of 2)", telugu: "టంగ్ క్లీనర్లు", mrpPrice: 41, discount: 1, price: 40, unit: "pack", quantity: 1, imageUrl: "https://placehold.co/150x150/d1fae5/065f46?text=Tongue+Cleaner" },
+            { id: 55, name: "Spinge Face Powder/Talcum", telugu: "ఫేస్ పౌడర్", mrpPrice: 115, discount: 15, price: 100, unit: "100gm", quantity: 1, imageUrl: "./spinzPowder.jpg" },
+
+            // Stationery (స్టేషనరీ)
+            { id: 56, name: "Pens", telugu: "పెన్నులు", mrpPrice: 10, discount: 0, price: 10, unit: "pack", quantity: 1, imageUrl: "Pen.jpg" },
+            { id: 57, name: "Apsara Pencils", telugu: "పెన్సిళ్లు", mrpPrice: 6, discount: 1, price: 6, unit: "pack", quantity: 1, imageUrl: "./apsara pencil.jpg" },
+            { id: 58, name: "Notebooks", telugu: "పుస్తకాలు", mrpPrice: 36, discount: 1, price: 35, unit: "book", quantity: 1, imageUrl: "./notebooks.png" },
+            { id: 59, name: "Erasers (Pack of 5)", telugu: "ఎరేజర్లు", mrpPrice: 21, discount: 1, price: 20, unit: "pack", quantity: 1, imageUrl: "./eraser.png" },
+            { id: 60, name: "Natraj Sharpeners (Pack of 3)", telugu: "షార్ప్‌నర్లు", mrpPrice: 16, discount: 1, price: 15, unit: "pack", quantity: 1, imageUrl: "./natraj sharpner.jpg" },
+            { id: 61, name: "Tata Pink Salt(Uppu)", telugu: "ఉప్పు", mrpPrice: 80, discount: 0, price: 80, unit: "1 kg", quantity: 1, imageUrl: "./pinkSalt.jpg" },
+            { id: 62, name: "LALAH Mutton Masala", telugu: "మటన్ మసాలా", mrpPrice: 36, discount: 6, price: 30, unit: "kg", quantity: 1, imageUrl: "./muttonMasala.png" },
+            { id: 63, name: "LALAH Chicken Masala", telugu: "చికెన్ మసాలా", mrpPrice: 27, discount: 7, price: 20, unit: "kg", quantity: 1, imageUrl: "./lalahs chicken masala.jpg" },
+
+            { id: 64, name: "Pears", telugu: "పియర్స్", mrpPrice: 50, discount: 3, price: 47, unit: "100gms", quantity: 1, imageUrl: "./pearsSoap.jpg" },
+{ id: 65, name: "Mr.Muscle Toilet Cleaner", telugu: "మిస్టర్ మస్కిల్ టాయిలెట్ క్లీనర్", mrpPrice: 99, discount: 14, price: 85, unit: "500ml", quantity: 1, imageUrl: "./mrmuscletoilet.jpg" },
+{ id: 66, name: "Soft Touch comfort", telugu: "సాఫ్ట్ టచ్", mrpPrice: 235, discount: 5, price: 230, unit: "860ml", quantity: 1, imageUrl: "./softTouch.jpg" },
+
+{ id: 67, name: "Ariel Liquid Detergent", telugu: "అరియల్ ద్రవ క్లీన్", mrpPrice: 379, discount: 19, price: 360, unit: "2litre", quantity: 1, imageUrl: "./aerialLiquid.jpg" },
+{ id: 68, name: "Rin Detergent Powder", telugu: "రిన్ పౌడర్", mrpPrice: 122, discount: 4, price: 118, unit: "1kg", quantity: 1, imageUrl: "./rinPowder.jpg" },
+
+{ id: 69, name: "Soft Touch comfort", telugu: "సాఫ్ట్ టచ్", mrpPrice: 58, discount: 5, price: 53, unit: "210ml", quantity: 1, imageUrl: "./softTouch.jpg" },
+{ id: 70, name: "Indulekha Shampoo", telugu: "ఇండులేఖా షాంపూ", mrpPrice: 2, discount: 0, price: 53, unit: "210ml", quantity: 1, imageUrl: "./indhulekhaShampoo.jpg" },
+{ id: 71, name: "Rexona Shoulder Fresh Deodorant", telugu: "రెక్సోనా", mrpPrice: 190, discount: 40, price: 150, unit: "50ml", quantity: 1, imageUrl: "./rexonShoulder.jpg" },
+{ id: 72, name: "Surf Excel Soaps", telugu: "సర్ఫ్ ఎక్సెల్ సబ్బు", mrpPrice: 128, discount: 3, price: 125, unit: "4*200gms", quantity: 1, imageUrl: "./surfExcelBar.jpg" },
+{ id: 74, name: "Santoor Handwash", telugu: "సంతూర్ హ్యాండ్‌వాష్", mrpPrice: 198, discount: 2, price: 195, unit: "2*650ml", quantity: 1, imageUrl: "./santoorHandwash.jpg" },
+{ id: 73, name: "Pepsodent paste", telugu: "పెప్సోడెంట్", mrpPrice: 226, discount: 6, price: 220, unit: "2*150gms", quantity: 1, imageUrl: "./pepsodentPaste.jpg" },
+{ id: 75, name: "Papads", telugu: "పాపడ్స్", mrpPrice: 64, discount: 5, price: 64, unit: "2*200gms", quantity: 1, imageUrl: "./papads.jpg" },
+{ id: 76, name: "Morissons Diapers Large", telugu: "మొరిస్సన్స్ డయాపర్స్", mrpPrice: 1049, discount: 229, price: 720, unit: "62Pcs", quantity: 1, imageUrl: "./morissonsDiapersL.jpg" },
+{ id: 77, name: "Morissons Diapers Medium", telugu: "మొరిస్సన్స్ డయాపర్స్", mrpPrice: 1049, discount: 129, price: 820, unit: "72Pcs", quantity: 1, imageUrl: "./morisonsM.jpg" },
+
+
+
+{ id: 78, name: "Bru Packets", telugu: "బ్రూ ప్యాకెట్లు", mrpPrice: 5, discount: 0, price: 5, unit: "1Pkt", quantity: 1, imageUrl: "./bruSachet.jpg" },
+{ id: 79, name: "Santoor", telugu: "సంతూర్", mrpPrice: 10, discount: 0, price: 10, unit: "43gms", quantity: 1, imageUrl: "./santoor.jpg" },
+
+{ id: 80, name: "Dettol Colegen Fresh", telugu: "డెటోల్ కోలెజెన్ ఫ్రెష్", mrpPrice: 145, discount: 5, price: 140, unit: "100gms", quantity: 5, imageUrl: "./dettolCologn.jpg" },
+
+{ id: 81, name: "Dove", telugu: "డోవ్", mrpPrice: 160, discount: 10, price: 150, unit: "3*100gms", quantity: 1, imageUrl: "./doveSoaps.jpg" },
+{ id: 82, name: "Life buoy Lemon", telugu: "లైఫ్ బోయ్ నిమ్మ", mrpPrice: 37, discount: 2, price: 35, unit: "100gms", quantity: 1, imageUrl: "./lifebuoyLemon.jpg" },
+{ id: 83, name: "Dabur Red Paste", telugu: "డాబర్", mrpPrice: 231, discount: 11, price: 220, unit: "300gms", quantity: 1, imageUrl: "./daburRedPaste.jpg" },
+{ id: 84, name: "Dettol Ice Cool", telugu: "డెటోల్ ఐస్ కూల్", mrpPrice: 168, discount: 8, price: 160, unit: "4*100gms", quantity: 1, imageUrl: "./dettolCool.jpg" },
+{ id: 85, name: "Patanjali Neem Kanti", telugu: "పతంజలి నిమ్మ కాంతి", mrpPrice: 83, discount: 3, price: 80, unit: "4*75gms", quantity: 1, imageUrl: "./patanjaliNeemKanti.jpg" },
+{ id: 86, name: "Cinthol Soaps", telugu: "సింథోల్ సబ్బు", mrpPrice: 150, discount: 5, price: 125, unit: "4*125gms", quantity: 1, imageUrl: "./cintholSoap.jpg" },
+{ id: 87, name: "Dettol Soaps", telugu: "డెటోల్ సబ్బు", mrpPrice: 88, discount: 0, price: 88, unit: "60gms", quantity: 1, imageUrl: "./dettolSoap100gms.jpg" },
+{ id: 88, name: "Dettol Soaps", telugu: "డెటోల్ సబ్బు", mrpPrice: 145, discount: 5, price: 140, unit: "100gms", quantity: 1, imageUrl: "./dettolSoap100gms.jpg" },
+{ id: 89, name: "Lux", telugu: "లక్స్", mrpPrice: 105, discount: 0, price: 105, unit: "100gms", quantity: 1, imageUrl: "./lux100gms.jpg" },
+{ id: 90, name: "Camay Soaps", telugu: "కామాయ్ సబ్బు", mrpPrice: 237, discount: 37, price: 200, unit: "", quantity: 1, imageUrl: "./camaySoap.jpg" },
+{ id: 91, name: "Santoor", telugu: "సంతూర్", mrpPrice: 88, discount: 0, price: 88, unit: "60gms", quantity: 1, imageUrl: "./santoor.jpg" },
+{ id: 92, name: "Santoor Soaps-small", telugu: "సంతూర్ సబ్బు", mrpPrice: 20, discount: 2, price: 18, unit: "44gms", quantity: 1, imageUrl: "./santoor.jpg" },
+{ id: 93, name: "Santoor Soaps-big", telugu: "సంతూర్ సబ్బు", mrpPrice: 50, discount: 5, price: 45, unit: "125gms", quantity: 1, imageUrl: "./santoor.jpg" },
+{ id: 94, name: "MTR Gulab Jamun", telugu: "ఎమ్‌టిఆర్ గులాబ్ జామున్", mrpPrice: 220, discount: 20, price: 200, unit: "500gms", quantity: 1, imageUrl: "./mtrGulabJamun.jpg" },
+{ id: 95, name: "Wagh Bhakri", telugu: "వాఘ్ భక్రి", mrpPrice: 160, discount: 5, price: 155, unit: "250gms", quantity: 1, imageUrl: "./waghBakri.jpg" },
+{ id: 96, name: "Whisper XL", telugu: "విస్పర్", mrpPrice: 50, discount: 0, price: 50, unit: "6pack", quantity: 1, imageUrl: "./whisper.jpg" },
+{ id: 97, name: "Lyzol", telugu: "లైజోల్", mrpPrice: 123, discount: 3, price: 120, unit: "500ml", quantity: 1, imageUrl: "./lyzol.jpg" },
+{ id: 98, name: "Savlon", telugu: "సావ్లాన్", mrpPrice: 58, discount: 0, price: 58, unit: "100ml", quantity: 1, imageUrl: "./savlon.jpg" },
+{ id: 99, name: "Ginger Garlic Paste", telugu: "అల్లం వెల్లుల్లి పేస్ట్", mrpPrice: 0, discount: 0, price: 0, unit: "", quantity: 1, imageUrl: "./ginger garlic paste.jpg" },
+{ id: 100, name: "Turmeric Powder - Eastern", telugu: "పసుపు", mrpPrice: 95, discount: 0, price: 90, unit: "250gms", quantity: 1, imageUrl: "./turmeric eastern.jpg" },
+{ id: 101, name: "Dettol liquid", telugu: "డెటోల్ లిక్విడ్", mrpPrice: 83, discount: 1, price: 82, unit: "125ml", quantity: 1, imageUrl: "./dettol antiseptic.jpg" },
+{ id: 102, name: "Philsburry Wheat Flour", telugu: "ఫిల్స్‌బురి గోధుమ పిండి", mrpPrice: 406, discount: 3, price: 350, unit: "5 kg", quantity: 1, imageUrl: "./aata.jpg" },
+{ id: 103, name: "LaLah's Sambar Powder", telugu: "సాంబార్ పౌడర్", mrpPrice: 27, discount: 2, price: 25, unit: "50gms", quantity: 1, imageUrl: "./sambarLalah.jpg" },
+{ id: 104, name: "Garam Masala", telugu: "గరమ్ మసాలా", mrpPrice: 123, discount: 3, price: 120, unit: "500ml", quantity: 1, imageUrl: "./garam masala surya.jpg" },
+{ id: 105, name: "Star Anise", telugu: "స్టార్ అనీస్", mrpPrice: 205, discount: 105, price: 100, unit: "50gms", quantity: 1, imageUrl: "./starA.png" },
+{ id: 106, name: "Head & Shoulders", telugu: "హెడ్ & షోల్డర్స్", mrpPrice: 2, discount: 0, price: 2, unit: "5ml", quantity: 1, imageUrl: "./head&shoulder.jpg" },
+{ id: 107, name: "Fevi Stick", telugu: "ఫెవి స్టిక్", mrpPrice: 15, discount: 0, price: 15, unit: "", quantity: 1, imageUrl: "./fevistick.jpg" },
+{ id: 108, name: "Kasthuri Methi", telugu: "కస్తూరి మెత్తి", mrpPrice: 70, discount: 10, price: 60, unit: "100gms", quantity: 1, imageUrl: "./kasthuriMethi.jpg" },
+{ id: 109, name: "Surya - Biryani leaf", telugu: "సూర్య - బిర్యానీ ఆకులు", mrpPrice: 40, discount: 0, price: 40, unit: "100gms", quantity: 1, imageUrl: "./suryaBirLeaf.png" },
+{ id: 110, name: "JK Black Pepper", telugu: "జేకే మిరియాలు", mrpPrice: 90, discount: 3, price: 90, unit: "50gms", quantity: 1, imageUrl: "./black pepper jk.jpg" },
+{ id: 111, name: "Durgeshwari Cycle Sambrani", telugu: "డుర్గేశ్వరి సైకిల్", mrpPrice: 24, discount: 2, price: 22, unit: "100gms", quantity: 1, imageUrl: "./durgeshwari cycle.jpg" },
+{ id: 112, name: "Fun Flips Crunchy Puffs", telugu: "ఫన్ ఫ్లిప్స్", mrpPrice: 30, discount: 5, price: 25, unit: "60gms", quantity: 1, imageUrl: "./ff.jpg" },
+{ id: 113, name: "Maggi Noodles", telugu: "మాగి నూడుల్స్", mrpPrice: 90, discount: 6, price: 84, unit: "6packs", quantity: 1, imageUrl: "./maggi.png" },
+{ id: 114, name: "Maggi Noodles", telugu: "మాగి నూడుల్స్", mrpPrice: 60, discount: 3, price: 57, unit: "4packs", quantity: 1, imageUrl: "./maggi.png" },
+{ id: 115, name: "Natraj Sharpner", telugu: "నట్రాజ్ షార్పనర్", mrpPrice: 5, discount: 0, price: 5, unit: "1", quantity: 1, imageUrl: "./natraj sharpner.jpg" },
+{ id: 116, name: "Sivaji Vandana Jyoti Agarbatti", telugu: "సివాజీ వందన జ్యోతి", mrpPrice: 25, discount: 0, price: 25, unit: "50gms", quantity: 1, imageUrl: "./sivaji agarbatti.jpg" },
+{ id: 117, name: "Coconuts", telugu: "Coconuts", mrpPrice: 45, discount: 0, price: 45, unit: "", quantity: 1, imageUrl: "./coconuts.jpg" },
+{ id: 118, name: "Pansonic Battery large", telugu: "Pansonic Battery", mrpPrice: 12, discount: 0, price: 12, unit: "", quantity: 1, imageUrl: "./panabatteries.jpg" },
+{ id: 119, name: "EveryDay Battery small", telugu: "EveryDay Battery", mrpPrice: 18, discount: 0, price: 18, unit: "", quantity: 1, imageUrl: "./batteveryday.jpg" },
+{ id: 120, name: "Sketches", telugu: "", mrpPrice: 35, discount: 0, price: 35, unit: "", quantity: 1, imageUrl: "./sketches.jpg" },
+{ id: 121, name: "Gala Steel Scrub", telugu: "", mrpPrice: 40, discount: 10, price: 30, unit: "", quantity: 1, imageUrl: "./galastealscrub.jpg" },
+{ id: 122, name: "Bindhu Jeera Soda", telugu: "", mrpPrice: 95, discount: 5, price: 90, unit: "2 litres", quantity: 1, imageUrl: "./bindhuJeeraSoda.jpg" },
+{ id: 123, name: "Coriander Powder", telugu: "", mrpPrice: 80, discount: 0, price: 12, unit: "200 gms", quantity: 1, imageUrl: "./panabatteries.jpg" },
+{ id: 124, name: "Surya - Cloves", telugu: "Lavangalu", mrpPrice: 200, discount: 125, price: 75, unit: "100 gms", quantity: 1, imageUrl: "./cloves-surya.jpg" },
+{ id: 125, name: "ENO", telugu: "", mrpPrice: 11, discount: 0, price: 11, unit: "", quantity: 1, imageUrl: "./eno.png" },
+{ id: 126, name: "Fine Lifes Agarbatti", telugu: "", mrpPrice: 60, discount: 10, price: 50, unit: "140 gms", quantity: 1, imageUrl: "./agarbatti finelifes.jpg" },
+{ id: 127, name: "Fine Lifes Agarbatti", telugu: "", mrpPrice: 20, discount: 5, price: 15, unit: "28 gms", quantity: 1, imageUrl: "./agarbatti finelifes.jpg" },
+{ id: 128, name: "Gum", telugu: "", mrpPrice: 10, discount: 0, price: 10, unit: "", quantity: 1, imageUrl: "./gum.webp" },
+{ id: 129, name: "Surya - Cinnamon", telugu: "", mrpPrice: 499, discount: 150, price: 349, unit: "", quantity: 1, imageUrl: "./dalchi-surya.jpg" },
+{ id: 130, name: "Revlon Shampoo", telugu: "", mrpPrice: 10, discount: 0, price: 10, unit: "", quantity: 1, imageUrl: "./revlon-shampoo.jpg" },
+{ id: 131, name: "Amruthanjan Balm", telugu: "", mrpPrice: 10, discount: 0, price: 10, unit: "", quantity: 1, imageUrl: "./amruthanjanbalm.jpg" },
+{ id: 132, name: "Nutralite Butter", telugu: "", mrpPrice: 10, discount: 0, price: 10, unit: "", quantity: 1, imageUrl: "./butter-nutralite.png" },
+{ id: 133, name: "Jersey Paneer", telugu: "", mrpPrice: 10, discount: 0, price: 10, unit: "7.7gms", quantity: 1, imageUrl: "./paneer-jersey.jpg" },
+{ id: 134, name: "Dlecta Cheese", telugu: "", mrpPrice: 160, discount: 30, price: 130, unit: "", quantity: 1, imageUrl: "./cheese.jpg" },
+{ id: 135, name: "Dove Shampoos", telugu: "", mrpPrice: 4, discount: 0, price: 4, unit: "1pack", quantity: 1, imageUrl: "./dove.png" },
+{ id: 136, name: "Mill Maker", telugu: "", mrpPrice: 0, discount: 0, price: 100, unit: "1kg", quantity: 1, imageUrl: "./millmaker.png"},
+{ id: 137, name: "Sabena", telugu: "", mrpPrice: 0, discount: 0, price: 20, unit: "1 pack", quantity: 1, imageUrl: "./sabena.png" },
+{ id: 138, name: "Match Box", telugu: "", mrpPrice: 0, discount: 0, price: 5, unit: "1 pack", quantity: 1, imageUrl: "./matcbox.png"},
+{ id: 139, name: "Eggs", telugu: "", mrpPrice: 7, discount: 0, price: 7, unit: "1 piece", quantity: 1, imageUrl: "./eggs.png"}
+        ];
+
+        // Global state for the shopping cart
+        let cart = [];
+
+        // Utility for formatting currency in Indian Rupees
+        const formatter = new Intl.NumberFormat('en-IN', {
+            style: 'currency',
+            currency: 'INR',
+            minimumFractionDigits: 2,
+        });
+
+        // --- CORE FUNCTIONS ---
+
+        /**
+         * Shows a custom modal with a title and message.
+         * @param {string} title - The title of the modal.
+         * @param {string} message - The message body.
+         */
+        function showModal(title, message) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-message').textContent = message;
+            document.getElementById('custom-modal').classList.remove('hidden');
+        }
+
+        /**
+         * Closes the custom modal.
+         */
+        function closeModal() {
+            document.getElementById('custom-modal').classList.add('hidden');
+        }
+
+        /**
+         * Adds a product to the cart or updates its quantity.
+         * @param {number} productId - The ID of the product.
+         */
+        function addToCart(productId) {
+            const product = initialProductsData.find(p => p.id === productId);
+            if (!product) return;
+
+            // Step 1: Safely retrieve the quantity input element
+            const qtyInput = document.getElementById(`qty-${productId}`);
+            if (!qtyInput) {
+                console.error(`Error: Quantity input element for ID ${productId} not found.`);
+                showModal("System Error", "Could not find quantity input for this product. Please try again.");
+                return;
+            }
+
+            // Step 2: Parse the quantity value
+            const quantity = parseInt(qtyInput.value, 10);
+
+            if (isNaN(quantity) || quantity <= 0) {
+                showModal("Invalid Quantity", "Please enter a valid quantity greater than 0.");
+                return;
+            }
+
+            // DEBUGGING: Log the quantity and cart operation
+            console.log(`Processing cart for: ${product.name} (ID: ${productId}), Requested Quantity: ${quantity}`);
+
+
+            // Step 3: Update the global cart state
+            const existingItemIndex = cart.findIndex(item => item.id === productId);
+            let modalAction = ''; // To store whether we added or updated
+
+            if (existingItemIndex > -1) {
+                // Item exists, update quantity
+                cart[existingItemIndex].quantity = quantity;
+                modalAction = 'Quantity Updated';
+            } else {
+                // New item, add to cart
+                // Create a clean copy of the product object to add to the cart
+                cart.push({ ...product, quantity });
+                modalAction = 'Added to Cart';
+            }
+
+            // Step 4: Rerender the cart UI
+            renderCart();
+            
+            // Step 5: Show precise confirmation modal
+            showModal(modalAction, `${quantity} ${product.unit} of ${product.name} is now in your cart.`);
+
+            // Step 6: Reset input field only after state update is complete
+            qtyInput.value = 1;
+        }
+
+        /**
+         * Removes an item completely from the cart.
+         * @param {number} productId - The ID of the product to remove.
+         */
+        function removeFromCart(productId) {
+            cart = cart.filter(item => item.id !== productId);
+            renderCart();
+        }
+
+
+        /**
+         * Renders the product grid based on the current search query.
+         */
+        function renderProducts() {
+            const grid = document.getElementById('product-grid');
+            const searchQuery = document.getElementById('search-input').value.toLowerCase();
+            let html = '';
+
+            const filteredProducts = initialProductsData.filter(p => {
+                // Check all fields for a match
+                return Object.values(p).some(val => {
+                    if (val === undefined || val === null) return false;
+                    return val.toString().toLowerCase().includes(searchQuery);
+                });
+            });
+
+            if (filteredProducts.length === 0) {
+                grid.innerHTML = `<p class="text-xl text-gray-500 col-span-full p-8 text-center">
+                    No products found matching "${searchQuery}". Try a different search!
+                </p>`;
+                return;
+            }
+
+            filteredProducts.forEach(product => {
+                const stock = 10; // Assume 10 units/kg in stock for initial display
+
+                html += `
+                    <!-- Product Card for ${product.name} -->
+                    <div class="bg-white p-5 rounded-xl shadow-md border-t-4 border-teal-500 flex flex-col justify-between hover:shadow-xl transition duration-300">
+                        <!-- Product Image -->
+                        <div class="mb-4 flex justify-center">
+                            <img src="${product.imageUrl}" alt="${product.name}" class="rounded-lg object-cover w-full h-32 sm:h-40">
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-800">${product.name}</h3>
+                            <p class="text-sm text-teal-600 font-medium mt-1">${product.telugu}</p>
+                            <div class="my-2">
+                                ${product.mrpPrice && product.mrpPrice > 0 && product.mrpPrice != product.price ? `<span class='text-gray-400 text-lg line-through mr-2'>${formatter.format(product.mrpPrice)}</span>` : ''}
+                                <span class="text-3xl font-extrabold text-green-700">${formatter.format(product.price)}</span>
+                                <span class="text-base text-gray-500 font-medium">/ ${product.unit}</span>
+                            </div>
+                            <p class="text-xs text-gray-400 italic">Initial Stock: ${stock} ${product.unit}</p>
+                        </div>
+                        <!-- Quantity Controls -->
+                        <div class="mt-4 flex items-center justify-between space-x-2">
+                            <button type="button" class="qty-minus-btn bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-full w-8 h-8 flex items-center justify-center text-lg font-bold" data-product-id="${product.id}">-</button>
+                            <input type="number" id="qty-${product.id}" class="qty-input p-2 border-gray-300 focus:ring-teal-500 focus:border-teal-500 text-lg" value="1" min="1" max="${stock}" aria-label="Quantity for ${product.name}">
+                            <button type="button" class="qty-plus-btn bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-full w-8 h-8 flex items-center justify-center text-lg font-bold" data-product-id="${product.id}">+</button>
+                            <span class="text-gray-600 font-semibold text-sm">(${product.unit})</span>
+                        </div>
+                        <!-- Add to Cart Button below count -->
+                        <button data-product-id="${product.id}" class="mt-3 w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-3 rounded-lg text-sm add-to-cart-btn">
+                            Add to Cart
+                        </button>
+                    </div>
+                `;
+            });
+            grid.innerHTML = html;
+            // Attach event listeners to Add to Cart, plus, and minus buttons after rendering
+            setTimeout(() => {
+                // Add to Cart
+                const addToCartButtons = document.querySelectorAll('.add-to-cart-btn[data-product-id]');
+                addToCartButtons.forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const productId = parseInt(this.getAttribute('data-product-id'), 10);
+                        addToCart(productId);
+                    });
+                });
+                // Plus button
+                const plusBtns = document.querySelectorAll('.qty-plus-btn[data-product-id]');
+                plusBtns.forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const productId = parseInt(this.getAttribute('data-product-id'), 10);
+                        const qtyInput = document.getElementById(`qty-${productId}`);
+                        if (qtyInput) {
+                            let val = parseInt(qtyInput.value, 10) || 1;
+                            const max = parseInt(qtyInput.max, 10) || 99;
+                            if (val < max) qtyInput.value = val + 1;
+                        }
+                    });
+                });
+                // Minus button
+                const minusBtns = document.querySelectorAll('.qty-minus-btn[data-product-id]');
+                minusBtns.forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const productId = parseInt(this.getAttribute('data-product-id'), 10);
+                        const qtyInput = document.getElementById(`qty-${productId}`);
+                        if (qtyInput) {
+                            let val = parseInt(qtyInput.value, 10) || 1;
+                            const min = parseInt(qtyInput.min, 10) || 1;
+                            if (val > min) qtyInput.value = val - 1;
+                        }
+                    });
+                });
+            }, 0);
+        }
+
+        /**
+         * Renders the shopping cart sidebar and updates totals.
+         */
+        function renderCart() {
+            const container = document.getElementById('cart-items-container');
+            const totalItemsSpan = document.getElementById('total-items-value');
+            const grandTotalSpan = document.getElementById('grand-total-value');
+            const itemCountSpan = document.getElementById('cart-item-count');
+            const emptyMessage = document.getElementById('empty-cart-message');
+            // Update mobile cart icon count
+            const mobileCartCount = document.getElementById('mobile-cart-count');
+
+            let cartHtml = '';
+            let totalItems = 0;
+            let grandTotal = 0;
+
+            if (cart.length === 0) {
+                if (emptyMessage) emptyMessage.classList.remove('hidden');
+                document.getElementById('qr-code-section').classList.add('hidden');
+            } else {
+                if (emptyMessage) emptyMessage.classList.add('hidden');
+                cart.forEach(item => {
+                    const itemTotal = item.price * item.quantity;
+                    totalItems += item.quantity;
+                    grandTotal += itemTotal;
+
+                    cartHtml += `
+                        <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-semibold text-gray-800 truncate">${item.name}</p>
+                                <p class="text-xs text-gray-500">${item.quantity} ${item.unit} x ${formatter.format(item.price)}</p>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-sm font-bold text-teal-600">${formatter.format(itemTotal)}</span>
+                                <button onclick="removeFromCart(${item.id})" class="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            // CRITICAL UI UPDATE STEP
+            container.innerHTML = cartHtml;
+            // DEBUGGING: Check if the generated HTML was inserted successfully
+            console.log("DEBUG: Cart HTML Content set to. Length:", cartHtml.length);
+            if (cartHtml.length > 0) {
+                 console.log("DEBUG: Generated HTML snippet:", cartHtml.substring(0, 50) + "...");
+            } else {
+                 console.log("DEBUG: Cart is empty, generated HTML is empty string.");
+            }
+
+            // Update summary statistics
+            itemCountSpan.textContent = cart.length;
+            if (mobileCartCount) mobileCartCount.textContent = cart.length;
+            totalItemsSpan.textContent = totalItems.toFixed(0);
+            grandTotalSpan.textContent = formatter.format(grandTotal);
+            console.log("DEBUG: Cart item count updated to:", cart.length);
+        }
+
+        /**
+         * Handles the checkout process, showing the QR code and a confirmation message.
+         */
+        function checkout() {
+            const grandTotalText = document.getElementById('grand-total-value').textContent;
+
+            if (cart.length === 0) {
+                showModal("Checkout Failed", "Your cart is empty! Please add items before proceeding to checkout.");
+                return;
+            }
+
+            // Prepare WhatsApp message with cart icon beside Akshaya
+            let message = `*🛒 Akshaya xprss mart Checkout*\n\n`;
+            cart.forEach(item => {
+                message += `• ${item.name} (${item.quantity} ${item.unit}) - ₹${item.price} x ${item.quantity} = ₹${item.price * item.quantity}\n`;
+            });
+            let total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+            message += `\n*Grand Total:* ${grandTotalText}`;
+
+            // WhatsApp API link
+            const phone = '918374315697';
+            const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+
+            // Open WhatsApp in new tab
+            window.open(waUrl, '_blank');
+
+            // Clear the cart and update UI
+            cart = [];
+            renderCart();
+        }
+
+
+        // --- INITIALIZATION ---
+        window.onload = () => {
+            renderProducts();
+            renderCart();
+            
+            // Set up search to re-render products dynamically
+            document.getElementById('search-input').addEventListener('input', renderProducts);
+            updateMobileCartFab();
+            window.addEventListener('resize', updateMobileCartFab);
+        };
+        // Expose functions to global scope for HTML onclick handlers
+        window.addToCart = addToCart;
+        window.removeFromCart = removeFromCart;
+        window.checkout = checkout;
+        window.closeModal = closeModal;
+    </script>
+</body>
+</html>
