@@ -63,48 +63,38 @@
         }
         @media (max-width: 640px) {
             .product-list {
-                grid-template-columns: 1fr !important;
+                display: grid !important;
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 0.75rem !important;
                 max-height: none !important;
             }
             .product-list .bg-white {
-                padding: 1rem !important;
+                padding: 0.5rem !important;
             }
-            header {
-                padding: 1rem !important;
+            .product-list .product-image {
+                height: 3.5rem !important;
             }
-            .text-4xl {
-                font-size: 2rem !important;
+            .product-list .product-name {
+                font-size: 0.9rem !important;
             }
-            .text-3xl {
-                font-size: 1.5rem !important;
+            .product-list .product-telugu {
+                font-size: 0.7rem !important;
             }
-            .text-2xl {
-                font-size: 1.2rem !important;
-            }
-            .text-xl {
+            .product-list .product-price {
                 font-size: 1rem !important;
+            }
+            .product-list .product-mrp {
+                font-size: 0.7rem !important;
+            }
+            .product-list .product-unit {
+                font-size: 0.7rem !important;
             }
             .add-to-cart-btn, .qty-input {
-                font-size: 1rem !important;
-                padding: 0.5rem 0.75rem !important;
+                font-size: 0.8rem !important;
+                padding: 0.3rem 0.5rem !important;
             }
             .qty-input {
-                width: 3rem !important;
-            }
-            .rounded-2xl {
-                border-radius: 1rem !important;
-            }
-            .rounded-lg {
-                border-radius: 0.5rem !important;
-            }
-            .p-6, .p-5 {
-                padding: 1rem !important;
-            }
-            .mb-6 {
-                margin-bottom: 1rem !important;
-            }
-            .mb-8 {
-                margin-bottom: 1rem !important;
+                width: 2.2rem !important;
             }
         }
     </style>
@@ -209,7 +199,7 @@
         const initialProductsData = [
             // Dals and Flours (పప్పులు, పిండ్లు)
             // Updated Toor Dal placeholder with a warmer, more distinct color scheme
-            { id: 1, name: "Toor Dal", telugu: "కంది పప్పు", mrpPrice: '', discount: 0, price: 120, unit: "kg", imageUrl: "./turD.png" }, 
+            { id: 1, name: "Toor Dal", telugu: "కంది పప్పు", mrpPrice: 150, discount: 30, price: 120, unit: "kg", imageUrl: "./turD.png" }, 
             { id: 2, name: "Urad Dal (Split Black Gram)", telugu: "మినప పప్పు", mrpPrice: '', discount: 0, price: 125, unit: "kg", imageUrl: "./uradD.png" },
             { id: 3, name: "Chana Dal (Split Chickpea)", telugu: "శెనగ పప్పు", mrpPrice: '', discount: 0, price: 100, unit: "kg", imageUrl: "./chenaD.png" },
             { id: 4, name: "Moong Dal (Split Green Gram)", telugu: "పెసర పప్పు", mrpPrice: '', discount: 0, price: 125, unit: "kg", imageUrl: "./moongD.png" },
@@ -235,7 +225,7 @@
             // Spices & Seasonings (మసాలాలు)
             { id: 19, name: "Cumin Seeds (Jeera)", telugu: "జీలకర్ర", mrpPrice: 60, discount: 10, price: 50, unit: "100 gms", quantity: 1, imageUrl: "./jeelakarra.png" },
             { id: 20, name: "Surya Mustard Seeds(Aavalu)", telugu: "ఆవాలు", mrpPrice: 90, discount: 5, price: 85, unit: "500gms", quantity: 1, imageUrl: "./avalu.png" },
-            { id: 21, name: "Ashirvad Turmeric Powder (Pasupu)", mrpPrice: 40, discount: 5, quantity: 1, price: 35, unit: "100gms", imageUrl: "./pasupu.png" },
+            { id: 21, name: "Ashirvad Turmeric Powder (Pasupu)",  telugu: "", mrpPrice: 40, discount: 5, quantity: 1, price: 35, unit: "100gms", imageUrl: "./pasupu.png" },
             { id: 22, name: "Tata Refined Iodized Salt white (Uppu)", telugu: "ఉప్పు", mrpPrice: 30, discount: 1, price: 30, unit: "1kg", quantity: 1, imageUrl: "./tataSalt.jpg" },
             { id: 23, name: "Red Chili Powder (Kaaram)", telugu: "కారం", mrpPrice: 88, discount: 33, price: 55, unit: "200gms", quantity: 1, imageUrl: "./chilliPowder.png" },
             //{ id: 24, name: "Coriander Seeds (Dhaniyalu)", telugu: "ధనియాలు", mrpPrice: 0, discount: 1, price: 0, unit: "kg", quantity: 1, imageUrl: "./daniyalu.png" },
@@ -248,7 +238,7 @@
 
             // Snacks & Beverages (స్నాక్స్, పానీయాలు)
             { id: 31, name: "Red Label Tea Powder", telugu: "టీ పౌడర్", mrpPrice: 160, discount: 5, price: 155, unit: "packet", quantity: 1, imageUrl: "./redLabel.jpg" },
-            { id: 32, name: "Instant Coffee Mix Packets", telugu: "కాఫీ ప్యాకెట్స్", mrpPrice: 251, discount: 1, price: 250, unit: "packet", quantity: 1, imageUrl: "./coffeeP.png" },
+            // { id: 32, name: "Instant Coffee Mix Packets", telugu: "కాఫీ ప్యాకెట్స్", mrpPrice: 251, discount: 1, price: 250, unit: "packet", quantity: 1, imageUrl: "./coffeeP.png" },
             { id: 33, name: "Groundnuts", telugu: "పల్లీలు", mrpPrice: '150', discount: 20, price: 130, unit: "kg", quantity: 1, imageUrl: "./peanuts.png" },
             { id: 34, name: "Roasted Gram (Putnalu)", telugu: "పుట్నాలు", mrpPrice: 111, discount: 1, price: 110, unit: "kg", quantity: 1, imageUrl: "./putnalu.png" },
             // { id: 35, name: "Assorted Biscuit Packets", telugu: "బిస్కెట్ ప్యాకెట్స్", mrpPrice: 51, discount: 1, price: 50, unit: "packet", quantity: 1, imageUrl: "./biscuitPackets.png" },
@@ -371,7 +361,9 @@
 { id: 136, name: "Mill Maker", telugu: "", mrpPrice: 0, discount: 0, price: 100, unit: "1kg", quantity: 1, imageUrl: "./millmaker.png"},
 { id: 137, name: "Sabena", telugu: "", mrpPrice: 0, discount: 0, price: 20, unit: "1 pack", quantity: 1, imageUrl: "./sabena.png" },
 { id: 138, name: "Match Box", telugu: "", mrpPrice: 0, discount: 0, price: 5, unit: "1 pack", quantity: 1, imageUrl: "./matcbox.png"},
-{ id: 139, name: "Eggs", telugu: "", mrpPrice: 7, discount: 0, price: 7, unit: "1 piece", quantity: 1, imageUrl: "./eggs.png"}
+{ id: 139, name: "Eggs", telugu: "", mrpPrice: 7, discount: 0, price: 7, unit: "1 piece", quantity: 1, imageUrl: "./eggs.png"},
+{ id: 140, name: "Onions", telugu: "", mrpPrice: 35, discount: 5, price: 30, unit: "1 piece", quantity: 1, imageUrl: "./onions.png"}
+
         ];
 
         // Global state for the shopping cart
@@ -495,30 +487,30 @@
 
                 html += `
                     <!-- Product Card for ${product.name} -->
-                    <div class="bg-white p-5 rounded-xl shadow-md border-t-4 border-teal-500 flex flex-col justify-between hover:shadow-xl transition duration-300">
+                    <div class="bg-white p-3 rounded-lg shadow-md border-t-4 border-teal-500 flex flex-col justify-between hover:shadow-xl transition duration-300">
                         <!-- Product Image -->
-                        <div class="mb-4 flex justify-center">
-                            <img src="${product.imageUrl}" alt="${product.name}" class="rounded-lg object-cover w-full h-32 sm:h-40">
+                        <div class="mb-2 flex justify-center">
+                            <img src="${product.imageUrl}" alt="${product.name}" class="product-image rounded-lg object-contain w-full h-20">
                         </div>
                         <div>
-                            <h3 class="text-xl font-bold text-gray-800">${product.name}</h3>
-                            <p class="text-sm text-teal-600 font-medium mt-1">${product.telugu}</p>
-                            <div class="my-2">
-                                ${product.mrpPrice && product.mrpPrice > 0 && product.mrpPrice != product.price ? `<span class='text-gray-400 text-lg line-through mr-2'>${formatter.format(product.mrpPrice)}</span>` : ''}
-                                <span class="text-3xl font-extrabold text-green-700">${formatter.format(product.price)}</span>
-                                <span class="text-base text-gray-500 font-medium">/ ${product.unit}</span>
+                            <h3 class="product-name text-base font-bold text-gray-800 truncate overflow-hidden whitespace-nowrap" style="max-width: 100%">${product.name}</h3>
+                            <p class="product-telugu text-xs text-teal-600 font-medium mt-1 truncate overflow-hidden whitespace-nowrap" style="max-width: 100%">${product.telugu}</p>
+                            <div class="my-1">
+                                ${product.mrpPrice && product.mrpPrice > 0 && product.mrpPrice != product.price ? `<span class='product-mrp text-gray-400 text-xs line-through mr-1'>${formatter.format(product.mrpPrice)}</span>` : ''}
+                                <span class="product-price text-lg font-extrabold text-green-700">${formatter.format(product.price)}</span>
+                                <span class="product-unit text-xs text-gray-500 font-medium">/ ${product.unit}</span>
                             </div>
-                            <p class="text-xs text-gray-400 italic">Initial Stock: ${stock} ${product.unit}</p>
+                            <!-- Stock display removed as requested -->
                         </div>
                         <!-- Quantity Controls -->
-                        <div class="mt-4 flex items-center justify-between space-x-2">
-                            <button type="button" class="qty-minus-btn bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-full w-8 h-8 flex items-center justify-center text-lg font-bold" data-product-id="${product.id}">-</button>
-                            <input type="number" id="qty-${product.id}" class="qty-input p-2 border-gray-300 focus:ring-teal-500 focus:border-teal-500 text-lg" value="1" min="1" max="${stock}" aria-label="Quantity for ${product.name}">
-                            <button type="button" class="qty-plus-btn bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-full w-8 h-8 flex items-center justify-center text-lg font-bold" data-product-id="${product.id}">+</button>
-                            <span class="text-gray-600 font-semibold text-sm">(${product.unit})</span>
+                        <div class="mt-2 flex items-center justify-between space-x-1">
+                            <button type="button" class="qty-minus-btn bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-full w-6 h-6 flex items-center justify-center text-base font-bold" data-product-id="${product.id}">-</button>
+                            <input type="number" id="qty-${product.id}" class="qty-input p-1 border-gray-300 focus:ring-teal-500 focus:border-teal-500 text-base" value="1" min="1" max="${stock}" aria-label="Quantity for ${product.name}">
+                            <button type="button" class="qty-plus-btn bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-full w-6 h-6 flex items-center justify-center text-base font-bold" data-product-id="${product.id}">+</button>
+                            <span class="text-gray-600 font-semibold text-xs">(${product.unit})</span>
                         </div>
                         <!-- Add to Cart Button below count -->
-                        <button data-product-id="${product.id}" class="mt-3 w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-3 rounded-lg text-sm add-to-cart-btn">
+                        <button data-product-id="${product.id}" class="mt-2 w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-1 px-2 rounded-lg text-xs add-to-cart-btn">
                             Add to Cart
                         </button>
                     </div>
